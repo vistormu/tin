@@ -64,6 +64,16 @@ func TestConvertRejectsUnsupportedTarget(t *testing.T) {
 	}
 }
 
+func TestConvertRejectsMismatchedTargetAndOutput(t *testing.T) {
+	_, err := Convert(context.TODO(), Options{Input: "photo.jpg", Target: "webp", Output: "photo.png"})
+	if err == nil {
+		t.Fatal("Convert() returned nil error for mismatched target/output")
+	}
+	if !strings.Contains(err.Error(), "does not match target") {
+		t.Fatalf("Convert() error = %v, want target/output mismatch", err)
+	}
+}
+
 func TestConvertRejectsSameFormat(t *testing.T) {
 	_, err := Convert(context.TODO(), Options{Input: "photo.jpg", Target: "jpeg"})
 	if err == nil {

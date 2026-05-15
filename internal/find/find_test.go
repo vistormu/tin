@@ -106,6 +106,22 @@ func TestFindAllTypes(t *testing.T) {
 	}
 }
 
+func TestFindAllTypesAppliesExtensionFilterToDirectories(t *testing.T) {
+	dir := setupTree(t)
+	got, err := Find(Options{Root: dir, Extensions: []string{"go"}, Type: TypeAll})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 {
+		t.Fatalf("got %d matches, want 3 go files only: %v", len(got), paths(got))
+	}
+	for _, m := range got {
+		if m.IsDir {
+			t.Fatalf("directory matched extension filter: %v", m)
+		}
+	}
+}
+
 func TestParseType(t *testing.T) {
 	tests := map[string]Type{
 		"":    TypeFile,

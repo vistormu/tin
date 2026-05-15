@@ -18,7 +18,7 @@ func TestRootHelpListsCommands(t *testing.T) {
 	}
 
 	got := out.String()
-	for _, want := range []string{"compress", "convert", "flatten", "merge", "resize", "size", "split", "trash", "unzip", "zip"} {
+	for _, want := range []string{"compress", "convert", "count", "dedup", "find", "flatten", "merge", "rename", "resize", "size", "split", "trash", "unzip", "zip"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("help output missing %q:\n%s", want, got)
 		}
@@ -67,8 +67,11 @@ func TestCommandArgumentValidation(t *testing.T) {
 	tests := [][]string{
 		{"compress"},
 		{"convert"},
+		{"count"},
+		{"dedup"},
 		{"flatten"},
 		{"merge"},
+		{"rename"},
 		{"resize"},
 		{"size"},
 		{"split"},

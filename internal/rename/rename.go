@@ -215,7 +215,7 @@ func chooseUniqueDest(dir string, base string, source string, taken map[string]s
 		return "", err
 	}
 	for i := 0; ; i++ {
-		candidate := filepath.Join(dir, fsx.UniqueName(base, i))
+		candidate := filepath.Join(dir, fsx.UniqueNameWithExt(base, i))
 		if candidate == source {
 			continue
 		}

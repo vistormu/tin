@@ -27,16 +27,16 @@ func TestParseStyle(t *testing.T) {
 
 func TestTokenize(t *testing.T) {
 	tests := map[string][]string{
-		"My Photo Album":       {"My", "Photo", "Album"},
-		"my-photo_album":       {"my", "photo", "album"},
-		"camelCaseWord":        {"camel", "Case", "Word"},
-		"HTMLParserTest":       {"HTML", "Parser", "Test"},
-		"already-fine":         {"already", "fine"},
-		"weird!!!chars???":     {"weird", "chars"},
-		"한국어 파일":               {"한국어", "파일"},
-		"Mixed 한글 + ASCII":     {"Mixed", "한글", "ASCII"},
-		"123 Numbers 456":      {"123", "Numbers", "456"},
-		"":                     nil,
+		"My Photo Album":   {"My", "Photo", "Album"},
+		"my-photo_album":   {"my", "photo", "album"},
+		"camelCaseWord":    {"camel", "Case", "Word"},
+		"HTMLParserTest":   {"HTML", "Parser", "Test"},
+		"already-fine":     {"already", "fine"},
+		"weird!!!chars???": {"weird", "chars"},
+		"한국어 파일":           {"한국어", "파일"},
+		"Mixed 한글 + ASCII": {"Mixed", "한글", "ASCII"},
+		"123 Numbers 456":  {"123", "Numbers", "456"},
+		"":                 nil,
 	}
 
 	for input, want := range tests {
@@ -184,7 +184,7 @@ func TestBuildPlanCollidesWithExistingFile(t *testing.T) {
 	if len(plan.Moves) != 1 {
 		t.Fatalf("expected one move, got %v", plan.Moves)
 	}
-	if got, want := plan.Moves[0].Destination, filepath.Join(dir, "weird-name.txt.1"); got != want {
+	if got, want := plan.Moves[0].Destination, filepath.Join(dir, "weird-name.1.txt"); got != want {
 		t.Fatalf("Destination = %q, want %q", got, want)
 	}
 }
@@ -209,7 +209,8 @@ func TestBuildPlanCollidesWithinPlan(t *testing.T) {
 
 	dests := []string{plan.Moves[0].Destination, plan.Moves[1].Destination}
 	sort.Strings(dests)
-	want := []string{filepath.Join(dir, "hello-world.txt"), filepath.Join(dir, "hello-world.txt.1")}
+	want := []string{filepath.Join(dir, "hello-world.txt"), filepath.Join(dir, "hello-world.1.txt")}
+	sort.Strings(want)
 	if strings.Join(dests, "|") != strings.Join(want, "|") {
 		t.Fatalf("destinations = %v, want %v", dests, want)
 	}

@@ -119,6 +119,18 @@ func UniqueName(base string, index int) string {
 	return fmt.Sprintf("%s.%d", base, index)
 }
 
+func UniqueNameWithExt(base string, index int) string {
+	if index == 0 {
+		return base
+	}
+	ext := filepath.Ext(base)
+	stem := strings.TrimSuffix(base, ext)
+	if stem == "" {
+		return fmt.Sprintf("%s.%d", base, index)
+	}
+	return fmt.Sprintf("%s.%d%s", stem, index, ext)
+}
+
 func Move(src string, dst string) error {
 	if err := os.Rename(src, dst); err == nil {
 		return nil

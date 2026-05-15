@@ -53,7 +53,7 @@ func NewConvertCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&target, "target", "t", "", "target extension (jpg, png, webp)")
+	cmd.Flags().StringVarP(&target, "target", "t", "", "target extension (jpg, jpeg, png, webp)")
 	cmd.Flags().StringVarP(&output, "output", "o", "", "output path (single input only)")
 
 	return cmd

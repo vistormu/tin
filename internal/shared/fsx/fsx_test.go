@@ -118,6 +118,21 @@ func TestReplaceInPlaceLeavesTargetOnWriteFailure(t *testing.T) {
 	}
 }
 
+func TestUniqueNameWithExtPreservesExtension(t *testing.T) {
+	tests := map[string]string{
+		"file.txt":       "file.1.txt",
+		"archive.tar.gz": "archive.tar.1.gz",
+		".gitignore":     ".gitignore.1",
+		"README":         "README.1",
+	}
+
+	for base, want := range tests {
+		if got := UniqueNameWithExt(base, 1); got != want {
+			t.Fatalf("UniqueNameWithExt(%q, 1) = %q, want %q", base, got, want)
+		}
+	}
+}
+
 func TestExpandPathsErrorOnEmptyGlob(t *testing.T) {
 	dir := t.TempDir()
 	_, err := ExpandPaths([]string{filepath.Join(dir, "*.nope")})

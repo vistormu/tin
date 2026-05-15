@@ -70,7 +70,7 @@ func Find(opts Options) ([]Match, error) {
 			}
 		}
 
-		if len(exts) > 0 && !isDir {
+		if len(exts) > 0 {
 			ext := strings.ToLower(filepath.Ext(path))
 			if !contains(exts, ext) {
 				return nil
