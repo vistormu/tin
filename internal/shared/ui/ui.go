@@ -104,6 +104,16 @@ func PrintNote(w io.Writer, message string) {
 	fmt.Fprintln(w, newTheme(w).muted.Render(message))
 }
 
+func Plural(count int, singular string) string {
+	if count == 1 {
+		return fmt.Sprintf("%d %s", count, singular)
+	}
+	if singular == "directory" {
+		return fmt.Sprintf("%d directories", count)
+	}
+	return fmt.Sprintf("%d %ss", count, singular)
+}
+
 func PrintBox(w io.Writer, title string, rows []Row) {
 	theme := newTheme(w)
 	fmt.Fprintln(w, theme.title.Render(title))

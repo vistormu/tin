@@ -7,63 +7,83 @@ import (
 
 	"tin/internal/compress"
 	"tin/internal/shared/cobrahelp"
+	"tin/internal/shared/fsx"
 	"tin/internal/shared/helptext"
 	"tin/internal/shared/size"
 	"tin/internal/shared/ui"
 )
 
 func NewCompressCommand() *cobra.Command {
-	var quality string
+	var intensity string
 	var output string
+	var inPlace bool
 
 	cmd := &cobra.Command{
-		Use:   "compress <file>",
+		Use:   "compress <file|glob>...",
 		Short: "Compress a PDF or image file",
-		Long:  "Compress a supported PDF or image file.",
+		Long:  "Compress one or more supported PDF or image files. Accepts file paths and shell-style glob patterns.",
 		Example: `  tin compress report.pdf
-  tin compress report.pdf -q screen
-  tin compress photo.jpg -q 76 -o photo-small.jpg
-  tin compress qualities`,
-		Args: cobra.ExactArgs(1),
+  tin compress report.pdf -i high
+  tin compress photo.jpg -i medium -o photo-small.jpg
+  tin compress '*.pdf' -i high
+  tin compress photo.jpg --in-place
+  tin compress intensities`,
+		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			result, err := compress.Compress(cmd.Context(), compress.Options{
-				Input:   args[0],
-				Output:  output,
-				Quality: quality,
-			})
+			inputs, err := fsx.ExpandPaths(args)
 			if err != nil {
 				return err
 			}
+			if len(inputs) > 1 && output != "" {
+				return fmt.Errorf("--output is only allowed with a single input")
+			}
+			if inPlace && output != "" {
+				return fmt.Errorf("--in-place cannot be combined with --output")
+			}
 
-			ui.PrintCompressResult(
-				cmd.OutOrStdout(),
-				size.Format(result.BeforeSize),
-				size.Format(result.AfterSize),
-				result.ReductionPercent(),
-				result.Output,
-			)
+			out := cmd.OutOrStdout()
+			for _, input := range inputs {
+				result, err := compress.Compress(cmd.Context(), compress.Options{
+					Input:     input,
+					Output:    output,
+					Intensity: intensity,
+					InPlace:   inPlace,
+				})
+				if err != nil {
+					return err
+				}
+
+				ui.PrintCompressResult(
+					out,
+					size.Format(result.BeforeSize),
+					size.Format(result.AfterSize),
+					result.ReductionPercent(),
+					result.Output,
+				)
+			}
 			return nil
 		},
 	}
 
-	cobrahelp.SetQualityHelp(cmd, compress.QualityHelpSections())
-	cmd.Flags().StringVarP(&quality, "quality", "q", "", "PDF preset or image quality; run 'tin compress qualities' for values")
-	cmd.Flags().StringVarP(&output, "output", "o", "", "output path")
-	cmd.AddCommand(newCompressQualitiesCommand())
+	cobrahelp.SetQualityHelp(cmd, compress.IntensityHelpSections())
+	cmd.Flags().StringVarP(&intensity, "intensity", "i", "", "compression intensity: low, medium (default), high, or veryhigh")
+	cmd.Flags().StringVarP(&output, "output", "o", "", "output path (single input only)")
+	cmd.Flags().BoolVar(&inPlace, "in-place", false, "replace each input file with its compressed output")
+	cmd.AddCommand(newCompressIntensitiesCommand())
 
 	return cmd
 }
 
-func newCompressQualitiesCommand() *cobra.Command {
+func newCompressIntensitiesCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:     "qualities",
-		Aliases: []string{"quality"},
-		Short:   "Show supported compression quality values",
+		Use:     "intensities",
+		Aliases: []string{"intensity"},
+		Short:   "Show supported compression intensity values",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Fprintln(cmd.OutOrStdout(), "Quality Values:")
+			fmt.Fprintln(cmd.OutOrStdout(), "Intensity Values:")
 			fmt.Fprintln(cmd.OutOrStdout())
-			fmt.Fprintln(cmd.OutOrStdout(), helptext.RenderSections(compress.QualityHelpSections()))
+			fmt.Fprintln(cmd.OutOrStdout(), helptext.RenderSections(compress.IntensityHelpSections()))
 			return nil
 		},
 	}

@@ -18,33 +18,33 @@ func TestRootHelpListsCommands(t *testing.T) {
 	}
 
 	got := out.String()
-	for _, want := range []string{"compress", "flatten", "resize", "size", "trash", "unzip", "zip"} {
+	for _, want := range []string{"compress", "convert", "flatten", "merge", "resize", "size", "split", "trash", "unzip", "zip"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("help output missing %q:\n%s", want, got)
 		}
 	}
 }
 
-func TestCompressQualitiesCommand(t *testing.T) {
+func TestCompressIntensitiesCommand(t *testing.T) {
 	root := NewRootCommand()
 	var out bytes.Buffer
 	root.SetOut(&out)
 	root.SetErr(&out)
-	root.SetArgs([]string{"compress", "qualities"})
+	root.SetArgs([]string{"compress", "intensities"})
 
 	if err := root.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
 	got := out.String()
-	for _, want := range []string{"screen", "ebook", "printer", "prepress", "1-100"} {
+	for _, want := range []string{"low", "medium", "high", "veryhigh"} {
 		if !strings.Contains(got, want) {
-			t.Fatalf("compress qualities output missing %q:\n%s", want, got)
+			t.Fatalf("compress intensities output missing %q:\n%s", want, got)
 		}
 	}
 }
 
-func TestCompressHelpShowsQualityValues(t *testing.T) {
+func TestCompressHelpShowsIntensityValues(t *testing.T) {
 	root := NewRootCommand()
 	var out bytes.Buffer
 	root.SetOut(&out)
@@ -56,7 +56,7 @@ func TestCompressHelpShowsQualityValues(t *testing.T) {
 	}
 
 	got := out.String()
-	for _, want := range []string{"Quality Values:", "screen", "1-100"} {
+	for _, want := range []string{"Values:", "low", "medium", "high", "veryhigh"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("compress help output missing %q:\n%s", want, got)
 		}
@@ -66,9 +66,12 @@ func TestCompressHelpShowsQualityValues(t *testing.T) {
 func TestCommandArgumentValidation(t *testing.T) {
 	tests := [][]string{
 		{"compress"},
+		{"convert"},
 		{"flatten"},
+		{"merge"},
 		{"resize"},
 		{"size"},
+		{"split"},
 		{"trash"},
 		{"unzip"},
 		{"zip"},

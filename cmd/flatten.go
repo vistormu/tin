@@ -51,8 +51,8 @@ func NewFlattenCommand() *cobra.Command {
 				return err
 			}
 			ui.PrintBox(out, "Flattened", []ui.Row{
-				{Label: "Moved", Value: plural(result.MovedFiles, "file")},
-				{Label: "Removed", Value: plural(result.RemovedDirs, "directory")},
+				{Label: "Moved", Value: ui.Plural(result.MovedFiles, "file")},
+				{Label: "Removed", Value: ui.Plural(result.RemovedDirs, "directory")},
 				{Label: "Root", Value: plan.Root},
 			})
 			return nil
@@ -68,8 +68,8 @@ func NewFlattenCommand() *cobra.Command {
 func printFlattenPlan(out io.Writer, plan flatten.Plan) {
 	ui.PrintBox(out, "Flatten Plan", []ui.Row{
 		{Label: "Root", Value: plan.Root},
-		{Label: "Moves", Value: plural(len(plan.Moves), "file")},
-		{Label: "Dirs", Value: plural(len(plan.Dirs), "directory")},
+		{Label: "Moves", Value: ui.Plural(len(plan.Moves), "file")},
+		{Label: "Dirs", Value: ui.Plural(len(plan.Dirs), "directory")},
 	})
 	for _, move := range plan.Moves {
 		fmt.Fprintf(out, "  %s -> %s\n", move.Source, move.Destination)

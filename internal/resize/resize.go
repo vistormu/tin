@@ -6,13 +6,15 @@ import (
 
 	"tin/internal/magick"
 	"tin/internal/shared/fileutil"
+	"tin/internal/shared/fsx"
 )
 
 type Options struct {
-	Input  string
-	Output string
-	Width  int
-	Height int
+	Input   string
+	Output  string
+	Width   int
+	Height  int
+	InPlace bool
 }
 
 type Result struct {
@@ -32,6 +34,9 @@ func Resize(ctx context.Context, opts Options) (Result, error) {
 	if opts.Height < 0 {
 		return Result{}, fmt.Errorf("height must be greater than or equal to 0")
 	}
+	if opts.InPlace && opts.Output != "" {
+		return Result{}, fmt.Errorf("--in-place cannot be combined with --output")
+	}
 
 	ext := fileutil.LowerExt(opts.Input)
 	if !fileutil.IsSupportedImageExt(ext) {
@@ -43,13 +48,24 @@ func Resize(ctx context.Context, opts Options) (Result, error) {
 		return Result{}, err
 	}
 
-	output := opts.Output
-	if output == "" {
-		output = DefaultOutputPath(opts.Input)
+	run := func(target string) error {
+		return magick.ResizeImage(ctx, opts.Input, target, opts.Width, opts.Height)
 	}
 
-	if err := magick.ResizeImage(ctx, opts.Input, output, opts.Width, opts.Height); err != nil {
-		return Result{}, err
+	var output string
+	if opts.InPlace {
+		output = opts.Input
+		if err := fsx.ReplaceInPlace(opts.Input, run); err != nil {
+			return Result{}, err
+		}
+	} else {
+		output = opts.Output
+		if output == "" {
+			output = DefaultOutputPath(opts.Input)
+		}
+		if err := run(output); err != nil {
+			return Result{}, err
+		}
 	}
 
 	after, err := fileutil.FileSize(output)

@@ -41,6 +41,18 @@ func CompressImage(ctx context.Context, input string, output string, quality str
 	return nil
 }
 
+func ConvertImage(ctx context.Context, input string, output string) error {
+	if err := Check(); err != nil {
+		return err
+	}
+
+	cmd := exec.CommandContext(ctx, binary, input, "-strip", output)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("magick failed: %w: %s", err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
 func ResizeImage(ctx context.Context, input string, output string, width int, height int) error {
 	if err := Check(); err != nil {
 		return err

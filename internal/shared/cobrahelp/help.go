@@ -76,7 +76,7 @@ const helpTemplate = `{{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
 Examples:
 {{.Example}}{{end}}{{with qualityHelp .}}
 
-Quality Values:
+Values:
 {{.}}{{end}}{{with commandHelp .}}
 
 Commands:

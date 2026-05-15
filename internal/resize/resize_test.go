@@ -30,6 +30,13 @@ func TestResizeValidatesDimensionsBeforeStat(t *testing.T) {
 	}
 }
 
+func TestResizeRejectsInPlaceWithOutput(t *testing.T) {
+	_, err := Resize(nil, Options{Input: "x.jpg", Width: 100, InPlace: true, Output: "out.jpg"})
+	if err == nil {
+		t.Fatal("Resize() returned nil error when --in-place combined with --output")
+	}
+}
+
 func TestResizeRejectsUnsupportedExtensionBeforeStat(t *testing.T) {
 	_, err := Resize(nil, Options{Input: "missing.gif", Width: 10})
 	if err == nil {

@@ -25,7 +25,7 @@ func NewUnzipCommand() *cobra.Command {
 			}
 
 			ui.PrintBox(cmd.OutOrStdout(), "Unzipped", []ui.Row{
-				{Label: "Files", Value: plural(result.Files, "file")},
+				{Label: "Files", Value: ui.Plural(result.Files, "file")},
 				{Label: "Bytes", Value: size.Format(result.Bytes)},
 				{Label: "Output", Value: result.OutputDir},
 			})

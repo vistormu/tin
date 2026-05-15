@@ -30,16 +30,35 @@ func TestReductionPercent(t *testing.T) {
 	}
 }
 
-func TestValidateImageQuality(t *testing.T) {
-	for _, quality := range []string{"", "1", "82", "100"} {
-		if err := validateImageQuality(quality); err != nil {
-			t.Fatalf("validateImageQuality(%q) returned error: %v", quality, err)
+func TestCompressRejectsInPlaceWithOutput(t *testing.T) {
+	_, err := Compress(nil, Options{Input: "x.pdf", InPlace: true, Output: "out.pdf"})
+	if err == nil {
+		t.Fatal("Compress() returned nil error when --in-place combined with --output")
+	}
+}
+
+func TestResolveIntensity(t *testing.T) {
+	cases := map[string]intensityMapping{
+		"":         {pdfPreset: "printer", imageQuality: 80},
+		"low":      {pdfPreset: "prepress", imageQuality: 90},
+		"medium":   {pdfPreset: "printer", imageQuality: 80},
+		"high":     {pdfPreset: "ebook", imageQuality: 65},
+		"veryhigh": {pdfPreset: "screen", imageQuality: 45},
+	}
+
+	for input, want := range cases {
+		got, err := resolveIntensity(input)
+		if err != nil {
+			t.Fatalf("resolveIntensity(%q) returned error: %v", input, err)
+		}
+		if got != want {
+			t.Fatalf("resolveIntensity(%q) = %+v, want %+v", input, got, want)
 		}
 	}
 
-	for _, quality := range []string{"0", "101", "ebook", "75.5"} {
-		if err := validateImageQuality(quality); err == nil {
-			t.Fatalf("validateImageQuality(%q) returned nil error", quality)
+	for _, bad := range []string{"max", "82", "ebook", "VERYHIGH"} {
+		if _, err := resolveIntensity(bad); err == nil {
+			t.Fatalf("resolveIntensity(%q) returned nil error", bad)
 		}
 	}
 }

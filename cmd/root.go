@@ -23,9 +23,16 @@ func NewRootCommand() *cobra.Command {
 
 	root.AddCommand(
 		NewCompressCommand(),
+		NewConvertCommand(),
+		NewCountCommand(),
+		NewDedupCommand(),
+		NewFindCommand(),
 		NewFlattenCommand(),
+		NewMergeCommand(),
+		NewRenameCommand(),
 		NewResizeCommand(),
 		NewSizeCommand(),
+		NewSplitCommand(),
 		NewTrashCommand(),
 		NewUnzipCommand(),
 		NewZipCommand(),
