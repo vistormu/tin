@@ -108,8 +108,8 @@ func TestExecutePrintsStandardizedError(t *testing.T) {
 	}
 
 	got := out.String()
-	if !strings.HasPrefix(got, "Error: ") {
-		t.Fatalf("execute() error output = %q, want Error prefix", got)
+	if !strings.HasPrefix(got, "error: ") {
+		t.Fatalf("execute() error output = %q, want error prefix", got)
 	}
 	if strings.Contains(got, "Usage:") {
 		t.Fatalf("execute() printed usage for runtime error: %q", got)

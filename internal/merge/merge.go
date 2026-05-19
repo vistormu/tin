@@ -3,13 +3,14 @@ package merge
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"tin/internal/ghostscript"
 	"tin/internal/shared/fileutil"
 	"tin/internal/shared/fsx"
 )
 
-const defaultOutput = "merged.pdf"
+const defaultOutputName = "merged.pdf"
 
 type Options struct {
 	Inputs []string
@@ -36,7 +37,7 @@ func Merge(ctx context.Context, opts Options) (Result, error) {
 
 	output := opts.Output
 	if output == "" {
-		output = defaultOutput
+		output = filepath.Join(fileutil.Parent(opts.Inputs[0]), defaultOutputName)
 	}
 	if ext := fileutil.LowerExt(output); ext != ".pdf" {
 		return Result{}, fmt.Errorf("output must have .pdf extension, got %q", ext)

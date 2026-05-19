@@ -14,6 +14,7 @@ func TestDefaultZipOutput(t *testing.T) {
 	}{
 		{inputs: []string{"docs"}, want: "docs.zip"},
 		{inputs: []string{"photo.jpg"}, want: "photo.zip"},
+		{inputs: []string{"nested/photo.jpg"}, want: "nested/photo.zip"},
 		{inputs: []string{"a", "b"}, want: "archive.zip"},
 	}
 
@@ -27,7 +28,7 @@ func TestDefaultZipOutput(t *testing.T) {
 func TestDefaultUnzipOutput(t *testing.T) {
 	tests := map[string]string{
 		"archive.zip":        "archive",
-		"nested/archive.zip": "archive",
+		"nested/archive.zip": "nested/archive",
 		"notzip":             "notzip",
 	}
 

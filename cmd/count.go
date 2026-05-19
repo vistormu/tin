@@ -34,10 +34,10 @@ func NewCountCommand() *cobra.Command {
 				return err
 			}
 
-			ui.PrintBox(cmd.OutOrStdout(), "Counted", []ui.Row{
-				{Label: "Files", Value: ui.Plural(result.Files, "file")},
-				{Label: "Lines", Value: ui.Plural(result.Lines, "line")},
-				{Label: "Bytes", Value: size.Format(result.Bytes)},
+			ui.PrintBox(cmd.OutOrStdout(), "counted", []ui.Row{
+				{Label: "files", Value: ui.Plural(result.Files, "file")},
+				{Label: "lines", Value: ui.Plural(result.Lines, "line")},
+				{Label: "bytes", Value: size.Format(result.Bytes)},
 			})
 			return nil
 		},

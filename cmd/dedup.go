@@ -34,21 +34,21 @@ func NewDedupCommand() *cobra.Command {
 			printDedupPlan(out, plan)
 
 			if dryRun {
-				ui.PrintNote(out, "Dry run: no files were trashed")
+				ui.PrintNote(out, "dry run: no files were trashed")
 				return nil
 			}
 			removable := plan.Removable()
 			if removable == 0 {
-				ui.PrintNote(out, "No duplicates found")
+				ui.PrintNote(out, "no duplicates found")
 				return nil
 			}
 
-			ok, err := confirm.Ask(yes, fmt.Sprintf("Trash %d duplicate file(s)?", removable), cmd.InOrStdin(), out)
+			ok, err := confirm.Ask(yes, fmt.Sprintf("trash %d duplicate file(s)?", removable), cmd.InOrStdin(), out)
 			if err != nil {
 				return err
 			}
 			if !ok {
-				ui.PrintWarning(out, "Aborted")
+				ui.PrintWarning(out, "aborted")
 				return nil
 			}
 
@@ -62,8 +62,8 @@ func NewDedupCommand() *cobra.Command {
 				return err
 			}
 
-			ui.PrintBox(out, "Deduped", []ui.Row{
-				{Label: "Trashed", Value: ui.Plural(result.Trashed, "file")},
+			ui.PrintBox(out, "deduped", []ui.Row{
+				{Label: "trashed", Value: ui.Plural(result.Trashed, "file")},
 			})
 			return nil
 		},
@@ -76,10 +76,10 @@ func NewDedupCommand() *cobra.Command {
 }
 
 func printDedupPlan(out io.Writer, plan dedup.Plan) {
-	ui.PrintBox(out, "Dedup Plan", []ui.Row{
-		{Label: "Groups", Value: ui.Plural(len(plan.Groups), "group")},
-		{Label: "Removable", Value: ui.Plural(plan.Removable(), "file")},
-		{Label: "Recoverable", Value: size.Format(plan.RecoverableBytes())},
+	ui.PrintBox(out, "dedup plan", []ui.Row{
+		{Label: "groups", Value: ui.Plural(len(plan.Groups), "group")},
+		{Label: "removable", Value: ui.Plural(plan.Removable(), "file")},
+		{Label: "recoverable", Value: size.Format(plan.RecoverableBytes())},
 	})
 	for i, g := range plan.Groups {
 		fmt.Fprintf(out, "  group %d (%s)\n", i+1, size.Format(g.Size))

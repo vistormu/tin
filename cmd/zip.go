@@ -31,10 +31,10 @@ func NewZipCommand() *cobra.Command {
 				return err
 			}
 
-			ui.PrintBox(cmd.OutOrStdout(), "Zipped", []ui.Row{
-				{Label: "Files", Value: ui.Plural(result.Files, "file")},
-				{Label: "Bytes", Value: size.Format(result.Bytes)},
-				{Label: "Output", Value: result.Output},
+			ui.PrintBox(cmd.OutOrStdout(), "zipped", []ui.Row{
+				{Label: "files", Value: ui.Plural(result.Files, "file")},
+				{Label: "bytes", Value: size.Format(result.Bytes)},
+				{Label: "output", Value: result.Output},
 			})
 			return nil
 		},

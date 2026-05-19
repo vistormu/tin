@@ -29,20 +29,20 @@ func NewFlattenCommand() *cobra.Command {
 			out := cmd.OutOrStdout()
 			printFlattenPlan(out, plan)
 			if dryRun {
-				ui.PrintNote(out, "Dry run: no files were moved")
+				ui.PrintNote(out, "dry run: no files were moved")
 				return nil
 			}
 			if len(plan.Moves) == 0 && len(plan.Dirs) == 0 {
-				ui.PrintNote(out, "Nothing to flatten")
+				ui.PrintNote(out, "nothing to flatten")
 				return nil
 			}
 
-			ok, err := confirm.Ask(yes, fmt.Sprintf("Move %d file(s) and remove %d directories in %s?", len(plan.Moves), len(plan.Dirs), plan.Root), cmd.InOrStdin(), out)
+			ok, err := confirm.Ask(yes, fmt.Sprintf("move %d file(s) and remove %d directories in %s?", len(plan.Moves), len(plan.Dirs), plan.Root), cmd.InOrStdin(), out)
 			if err != nil {
 				return err
 			}
 			if !ok {
-				ui.PrintWarning(out, "Aborted")
+				ui.PrintWarning(out, "aborted")
 				return nil
 			}
 
@@ -50,10 +50,10 @@ func NewFlattenCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			ui.PrintBox(out, "Flattened", []ui.Row{
-				{Label: "Moved", Value: ui.Plural(result.MovedFiles, "file")},
-				{Label: "Removed", Value: ui.Plural(result.RemovedDirs, "directory")},
-				{Label: "Root", Value: plan.Root},
+			ui.PrintBox(out, "flattened", []ui.Row{
+				{Label: "moved", Value: ui.Plural(result.MovedFiles, "file")},
+				{Label: "removed", Value: ui.Plural(result.RemovedDirs, "directory")},
+				{Label: "root", Value: plan.Root},
 			})
 			return nil
 		},
@@ -66,10 +66,10 @@ func NewFlattenCommand() *cobra.Command {
 }
 
 func printFlattenPlan(out io.Writer, plan flatten.Plan) {
-	ui.PrintBox(out, "Flatten Plan", []ui.Row{
-		{Label: "Root", Value: plan.Root},
-		{Label: "Moves", Value: ui.Plural(len(plan.Moves), "file")},
-		{Label: "Dirs", Value: ui.Plural(len(plan.Dirs), "directory")},
+	ui.PrintBox(out, "flatten plan", []ui.Row{
+		{Label: "root", Value: plan.Root},
+		{Label: "moves", Value: ui.Plural(len(plan.Moves), "file")},
+		{Label: "dirs", Value: ui.Plural(len(plan.Dirs), "directory")},
 	})
 	for _, move := range plan.Moves {
 		fmt.Fprintf(out, "  %s -> %s\n", move.Source, move.Destination)

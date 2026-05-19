@@ -28,6 +28,7 @@ func NewRootCommand() *cobra.Command {
 		NewDedupCommand(),
 		NewFindCommand(),
 		NewFlattenCommand(),
+		NewIpCommand(),
 		NewMergeCommand(),
 		NewRenameCommand(),
 		NewResizeCommand(),

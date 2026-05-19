@@ -60,7 +60,7 @@ func TestPrintError(t *testing.T) {
 	var out bytes.Buffer
 	PrintError(&out, errors.New("boom"))
 
-	if got := out.String(); got != "Error: boom\n" {
+	if got := out.String(); got != "error: boom\n" {
 		t.Fatalf("PrintError() = %q", got)
 	}
 }

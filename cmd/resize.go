@@ -51,10 +51,10 @@ func NewResizeCommand() *cobra.Command {
 					return err
 				}
 
-				ui.PrintBox(out, "Resized", []ui.Row{
-					{Label: "Before", Value: size.Format(result.BeforeSize)},
-					{Label: "After", Value: size.Format(result.AfterSize)},
-					{Label: "Output", Value: result.Output},
+				ui.PrintBox(out, "resized", []ui.Row{
+					{Label: "before", Value: size.Format(result.BeforeSize)},
+					{Label: "after", Value: size.Format(result.AfterSize)},
+					{Label: "output", Value: result.Output},
 				})
 			}
 			return nil

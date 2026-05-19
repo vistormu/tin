@@ -28,16 +28,16 @@ func NewTrashCommand() *cobra.Command {
 			ui.PrintTargets(out, targets)
 
 			if dryRun {
-				ui.PrintNote(out, "Dry run: no files were moved")
+				ui.PrintNote(out, "dry run: no files were moved")
 				return nil
 			}
 
-			ok, err := confirm.Ask(yes, fmt.Sprintf("Move %d item(s) to trash?", len(targets)), cmd.InOrStdin(), out)
+			ok, err := confirm.Ask(yes, fmt.Sprintf("move %d item(s) to trash?", len(targets)), cmd.InOrStdin(), out)
 			if err != nil {
 				return err
 			}
 			if !ok {
-				ui.PrintWarning(out, "Aborted")
+				ui.PrintWarning(out, "aborted")
 				return nil
 			}
 
@@ -51,7 +51,7 @@ func NewTrashCommand() *cobra.Command {
 				}
 			}
 
-			ui.PrintSuccess(out, fmt.Sprintf("Trashed %d item(s)", len(targets)))
+			ui.PrintSuccess(out, fmt.Sprintf("trashed %d item(s)", len(targets)))
 			return nil
 		},
 	}

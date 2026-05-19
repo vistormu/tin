@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"tin/internal/shared/fileutil"
 )
 
 type ZipOptions struct {
@@ -108,28 +110,26 @@ func Unzip(opts UnzipOptions) (UnzipResult, error) {
 
 func DefaultZipOutput(inputs []string) string {
 	if len(inputs) == 1 {
-		base := filepath.Base(filepath.Clean(inputs[0]))
-		ext := filepath.Ext(base)
-		if ext != "" {
-			base = strings.TrimSuffix(base, ext)
-		}
-		if base != "." && base != string(filepath.Separator) && base != "" {
-			return base + ".zip"
+		clean := filepath.Clean(inputs[0])
+		stem := fileutil.Stem(clean)
+		if stem != "." && stem != string(filepath.Separator) && stem != "" {
+			return filepath.Join(fileutil.Parent(clean), stem+".zip")
 		}
 	}
 	return "archive.zip"
 }
 
 func DefaultUnzipOutput(input string) string {
-	base := filepath.Base(filepath.Clean(input))
-	ext := filepath.Ext(base)
+	clean := filepath.Clean(input)
+	base := fileutil.Base(clean)
+	ext := fileutil.Ext(base)
 	if strings.EqualFold(ext, ".zip") {
 		base = strings.TrimSuffix(base, ext)
 	}
 	if base == "" || base == "." {
 		return "archive"
 	}
-	return base
+	return filepath.Join(fileutil.Parent(clean), base)
 }
 
 func addToZip(zw *zip.Writer, input string, seen map[string]struct{}, result *ZipResult) error {

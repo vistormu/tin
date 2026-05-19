@@ -24,10 +24,10 @@ func NewUnzipCommand() *cobra.Command {
 				return err
 			}
 
-			ui.PrintBox(cmd.OutOrStdout(), "Unzipped", []ui.Row{
-				{Label: "Files", Value: ui.Plural(result.Files, "file")},
-				{Label: "Bytes", Value: size.Format(result.Bytes)},
-				{Label: "Output", Value: result.OutputDir},
+			ui.PrintBox(cmd.OutOrStdout(), "unzipped", []ui.Row{
+				{Label: "files", Value: ui.Plural(result.Files, "file")},
+				{Label: "bytes", Value: size.Format(result.Bytes)},
+				{Label: "output", Value: result.OutputDir},
 			})
 			return nil
 		},

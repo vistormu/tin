@@ -16,6 +16,7 @@ Implemented commands:
 - `dedup`
 - `find`
 - `flatten`
+- `ip`
 - `merge`
 - `rename`
 - `resize`
@@ -65,6 +66,7 @@ tin/
 │   ├── dedup.go
 │   ├── find.go
 │   ├── flatten.go
+│   ├── ip.go
 │   ├── merge.go
 │   ├── rename.go
 │   ├── resize.go
@@ -84,6 +86,7 @@ tin/
     ├── flatten/
     ├── ghostscript/
     ├── installhint/
+    ├── ip/
     ├── magick/
     ├── merge/
     ├── platform/
@@ -238,6 +241,18 @@ The command prints:
 - output path
 
 Refuses to overwrite an existing output file. Refuses no-op conversions where the input is already the requested format.
+
+### `tin ip`
+
+Shows network address information for the host.
+
+Behavior:
+
+- Lists active local network interfaces with their IPv4 and IPv6 addresses, skipping interfaces that are down or expose only link-local addresses.
+- Fetches the current public IP from `https://api.ipify.org` with a 5-second timeout.
+- Reports the public lookup error inline instead of failing the whole command.
+
+The command prints one box per scope: a `local` box with per-interface addresses and a `public` box with the resolved address.
 
 ### `tin merge <file|glob>... [-o output.pdf]`
 
@@ -407,7 +422,6 @@ The following broader toolbox ideas are deferred:
 - unmount
 - eject
 - open
-- ip
 - kill
 - usage
 - git subcommands

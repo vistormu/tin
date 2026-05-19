@@ -7,10 +7,41 @@ import (
 	"strings"
 )
 
+func Parent(path string) string {
+	return filepath.Dir(path)
+}
+
+func Base(path string) string {
+	return filepath.Base(path)
+}
+
+func Ext(path string) string {
+	return filepath.Ext(path)
+}
+
+func Stem(path string) string {
+	base := filepath.Base(path)
+	return strings.TrimSuffix(base, filepath.Ext(base))
+}
+
+func Join(parts ...string) string {
+	return filepath.Join(parts...)
+}
+
 func DefaultOutputPath(input string, suffix string) string {
-	ext := filepath.Ext(input)
-	stem := strings.TrimSuffix(input, ext)
-	return stem + suffix + ext
+	parent := Parent(input)
+	stem := Stem(input)
+	ext := Ext(input)
+	return filepath.Join(parent, stem+suffix+ext)
+}
+
+func ReplaceExt(input string, newExt string) string {
+	parent := Parent(input)
+	stem := Stem(input)
+	if newExt != "" && !strings.HasPrefix(newExt, ".") {
+		newExt = "." + newExt
+	}
+	return filepath.Join(parent, stem+newExt)
 }
 
 func FileSize(path string) (int64, error) {

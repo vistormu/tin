@@ -39,17 +39,17 @@ func NewMergeCommand() *cobra.Command {
 				return err
 			}
 
-			ui.PrintBox(cmd.OutOrStdout(), "Merged", []ui.Row{
-				{Label: "Files", Value: ui.Plural(len(result.Inputs), "file")},
-				{Label: "Before", Value: size.Format(result.BeforeSize)},
-				{Label: "After", Value: size.Format(result.AfterSize)},
-				{Label: "Output", Value: result.Output},
+			ui.PrintBox(cmd.OutOrStdout(), "merged", []ui.Row{
+				{Label: "files", Value: ui.Plural(len(result.Inputs), "file")},
+				{Label: "before", Value: size.Format(result.BeforeSize)},
+				{Label: "after", Value: size.Format(result.AfterSize)},
+				{Label: "output", Value: result.Output},
 			})
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVarP(&output, "output", "o", "", "output path (default: merged.pdf)")
+	cmd.Flags().StringVarP(&output, "output", "o", "", "output path (default: <first-input-dir>/merged.pdf)")
 
 	return cmd
 }

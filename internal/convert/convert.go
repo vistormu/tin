@@ -3,7 +3,6 @@ package convert
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"tin/internal/magick"
@@ -87,9 +86,7 @@ func Convert(ctx context.Context, opts Options) (Result, error) {
 }
 
 func DefaultOutputPath(input string, targetExt string) string {
-	ext := filepath.Ext(input)
-	stem := strings.TrimSuffix(input, ext)
-	return stem + targetExt
+	return fileutil.ReplaceExt(input, targetExt)
 }
 
 func resolveTargetExt(opts Options) (string, error) {

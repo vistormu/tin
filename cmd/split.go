@@ -26,9 +26,9 @@ func NewSplitCommand() *cobra.Command {
 				return err
 			}
 
-			ui.PrintBox(cmd.OutOrStdout(), "Split", []ui.Row{
-				{Label: "Pages", Value: ui.Plural(len(result.Files), "page")},
-				{Label: "Output", Value: result.OutputDir},
+			ui.PrintBox(cmd.OutOrStdout(), "split", []ui.Row{
+				{Label: "pages", Value: ui.Plural(len(result.Files), "page")},
+				{Label: "output", Value: result.OutputDir},
 			})
 			return nil
 		},

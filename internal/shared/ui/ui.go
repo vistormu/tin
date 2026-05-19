@@ -22,7 +22,7 @@ type theme struct {
 	err     lipgloss.Style
 	success lipgloss.Style
 	warning lipgloss.Style
-	box     lipgloss.Style
+	border  lipgloss.Style
 }
 
 func newTheme(w io.Writer) theme {
@@ -47,10 +47,8 @@ func newTheme(w io.Writer) theme {
 		warning: renderer.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("11")),
-		box: renderer.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("8")).
-			Padding(0, 1),
+		border: renderer.NewStyle().
+			Foreground(lipgloss.Color("8")),
 	}
 }
 
@@ -63,11 +61,11 @@ func ColorEnabled(w io.Writer) bool {
 }
 
 func PrintCompressResult(w io.Writer, before string, after string, reduction float64, output string) {
-	PrintBox(w, "Compressed", []Row{
-		{Label: "Before", Value: before},
-		{Label: "After", Value: after},
-		{Label: "Reduction", Value: fmt.Sprintf("%.1f%%", reduction)},
-		{Label: "Output", Value: output},
+	PrintBox(w, "compressed", []Row{
+		{Label: "before", Value: before},
+		{Label: "after", Value: after},
+		{Label: "reduction", Value: fmt.Sprintf("%.1f%%", reduction)},
+		{Label: "output", Value: output},
 	})
 }
 
@@ -78,7 +76,7 @@ func PrintSize(w io.Writer, formattedSize string, path string) {
 
 func PrintTargets(w io.Writer, targets []string) {
 	theme := newTheme(w)
-	fmt.Fprintln(w, theme.title.Render(fmt.Sprintf("Targets (%d)", len(targets))))
+	fmt.Fprintln(w, theme.title.Render(fmt.Sprintf("targets (%d)", len(targets))))
 	for _, target := range targets {
 		fmt.Fprintf(w, "  %s %s\n", theme.muted.Render("-"), target)
 	}
@@ -97,7 +95,7 @@ func PrintError(w io.Writer, err error) {
 		return
 	}
 	theme := newTheme(w)
-	fmt.Fprintf(w, "%s %s\n", theme.err.Render("Error:"), err.Error())
+	fmt.Fprintf(w, "%s %s\n", theme.err.Render("error:"), err.Error())
 }
 
 func PrintNote(w io.Writer, message string) {
@@ -116,8 +114,41 @@ func Plural(count int, singular string) string {
 
 func PrintBox(w io.Writer, title string, rows []Row) {
 	theme := newTheme(w)
-	fmt.Fprintln(w, theme.title.Render(title))
-	fmt.Fprintln(w, theme.box.Render(renderRows(theme, rows)))
+	body := renderRows(theme, rows)
+	lines := strings.Split(body, "\n")
+
+	contentWidth := 0
+	for _, line := range lines {
+		if width := lipgloss.Width(line); width > contentWidth {
+			contentWidth = width
+		}
+	}
+
+	inner := contentWidth + 2
+
+	var top string
+	if title != "" {
+		titleText := theme.title.Render(title)
+		titleVisible := lipgloss.Width(titleText)
+		dashes := inner - titleVisible - 3
+		if dashes < 1 {
+			dashes = 1
+		}
+		top = theme.border.Render("╭─ ") + titleText + theme.border.Render(" "+strings.Repeat("─", dashes)+"╮")
+	} else {
+		top = theme.border.Render("╭" + strings.Repeat("─", inner) + "╮")
+	}
+	bottom := theme.border.Render("╰" + strings.Repeat("─", inner) + "╯")
+
+	fmt.Fprintln(w, top)
+	for _, line := range lines {
+		pad := contentWidth - lipgloss.Width(line)
+		if pad < 0 {
+			pad = 0
+		}
+		fmt.Fprintln(w, theme.border.Render("│")+" "+line+strings.Repeat(" ", pad)+" "+theme.border.Render("│"))
+	}
+	fmt.Fprintln(w, bottom)
 }
 
 func renderRows(theme theme, rows []Row) string {

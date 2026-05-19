@@ -59,9 +59,7 @@ func Split(ctx context.Context, opts Options) (Result, error) {
 }
 
 func DefaultOutputDir(input string) string {
-	ext := filepath.Ext(input)
-	stem := strings.TrimSuffix(input, ext)
-	return stem + "-pages"
+	return filepath.Join(fileutil.Parent(input), fileutil.Stem(input)+"-pages")
 }
 
 func ensureEmptyDir(dir string) error {

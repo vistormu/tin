@@ -46,20 +46,20 @@ func NewRenameCommand() *cobra.Command {
 			printRenamePlan(out, plan)
 
 			if dryRun {
-				ui.PrintNote(out, "Dry run: no files were renamed")
+				ui.PrintNote(out, "dry run: no files were renamed")
 				return nil
 			}
 			if len(plan.Moves) == 0 {
-				ui.PrintNote(out, "Nothing to rename")
+				ui.PrintNote(out, "nothing to rename")
 				return nil
 			}
 
-			ok, err := confirm.Ask(yes, fmt.Sprintf("Rename %d file(s)?", len(plan.Moves)), cmd.InOrStdin(), out)
+			ok, err := confirm.Ask(yes, fmt.Sprintf("rename %d file(s)?", len(plan.Moves)), cmd.InOrStdin(), out)
 			if err != nil {
 				return err
 			}
 			if !ok {
-				ui.PrintWarning(out, "Aborted")
+				ui.PrintWarning(out, "aborted")
 				return nil
 			}
 
@@ -67,8 +67,8 @@ func NewRenameCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			ui.PrintBox(out, "Renamed", []ui.Row{
-				{Label: "Moved", Value: ui.Plural(result.Moved, "file")},
+			ui.PrintBox(out, "renamed", []ui.Row{
+				{Label: "moved", Value: ui.Plural(result.Moved, "file")},
 			})
 			return nil
 		},
@@ -82,9 +82,9 @@ func NewRenameCommand() *cobra.Command {
 }
 
 func printRenamePlan(out io.Writer, plan rename.Plan) {
-	ui.PrintBox(out, "Rename Plan", []ui.Row{
-		{Label: "Renames", Value: ui.Plural(len(plan.Moves), "file")},
-		{Label: "Skipped", Value: ui.Plural(len(plan.NoOps), "file")},
+	ui.PrintBox(out, "rename plan", []ui.Row{
+		{Label: "renames", Value: ui.Plural(len(plan.Moves), "file")},
+		{Label: "skipped", Value: ui.Plural(len(plan.NoOps), "file")},
 	})
 	for _, move := range plan.Moves {
 		fmt.Fprintf(out, "  %s -> %s\n", move.Source, move.Destination)
