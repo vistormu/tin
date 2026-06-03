@@ -20,8 +20,8 @@ func NewCompressCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "compress <file|glob>...",
-		Short: "Compress a PDF or image file",
-		Long:  "Compress one or more supported PDF or image files. Accepts file paths and shell-style glob patterns.",
+		Short: "Compress a PDF, image, or video file",
+		Long:  "Compress one or more supported PDF, image, or video files. Accepts file paths and shell-style glob patterns.",
 		Example: `  tin compress report.pdf
   tin compress report.pdf -i high
   tin compress photo.jpg -i medium -o photo-small.jpg

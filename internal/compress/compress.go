@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"tin/internal/cwebp"
+	"tin/internal/ffmpeg"
 	"tin/internal/ghostscript"
 	"tin/internal/magick"
 	"tin/internal/shared/fileutil"
@@ -66,8 +67,14 @@ func Compress(ctx context.Context, opts Options) (Result, error) {
 				return err
 			}
 			return cwebp.CompressWebP(ctx, opts.Input, target, quality)
+		case ".mp4", ".mov", ".mkv":
+			crf, err := videoCRFForIntensity(opts.Intensity)
+			if err != nil {
+				return err
+			}
+			return ffmpeg.CompressVideo(ctx, opts.Input, target, crf)
 		default:
-			return fmt.Errorf("unsupported file type %q; supported types: .pdf, .jpg, .jpeg, .png, .webp", ext)
+			return fmt.Errorf("unsupported file type %q; supported types: .pdf, .jpg, .jpeg, .png, .webp, .mp4, .mov, .mkv", ext)
 		}
 	}
 

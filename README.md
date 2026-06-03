@@ -28,22 +28,47 @@ this builds and installs `tin` into `~/.local/bin/tin`.
 
 ## commands
 
-| command                 | purpose                                       |
-| ----------------------- | --------------------------------------------- |
-| `tin compress`          | compress pdfs and images.                     |
-| `tin convert`           | convert images between jpg, png, and webp.    |
-| `tin count`             | count files, lines, and bytes.                |
-| `tin dedup`             | find duplicate files and trash extras.        |
-| `tin find`              | find files by name, extension, and type.      |
-| `tin flatten`           | move nested files into a directory root.      |
-| `tin ip`                | show local interface and public ip addresses. |
-| `tin merge`             | merge multiple pdfs into one.                 |
-| `tin rename`            | normalize filenames to a chosen case style.   |
-| `tin resize`            | resize images.                                |
-| `tin size`              | print human-readable file or directory sizes. |
-| `tin split`             | split a pdf into one file per page.           |
-| `tin trash`             | move files or folders to the system trash.    |
-| `tin zip` / `tin unzip` | create and extract zip archives.              |
+### media
+
+| command        | purpose                                   |
+| -------------- | ----------------------------------------- |
+| `tin compress` | compress pdfs, images, and videos         |
+| `tin convert`  | convert between image, pdf, video, and audio formats |
+| `tin resize`   | resize images                             |
+| `tin merge`    | merge multiple pdfs into one              |
+| `tin split`    | split a pdf into one file per page        |
+
+### archives
+
+| command     | purpose                |
+| ----------- | ---------------------- |
+| `tin zip`   | create a zip archive   |
+| `tin unzip` | extract a zip archive  |
+
+### inspect
+
+| command     | purpose                                      |
+| ----------- | -------------------------------------------- |
+| `tin find`  | find files by name, extension, and type      |
+| `tin count` | count files, lines, and bytes                |
+| `tin size`  | print human-readable file or directory sizes |
+
+### organize
+
+| command       | purpose                                                       |
+| ------------- | ------------------------------------------------------------- |
+| `tin new`     | create files or directories with parent dirs auto-created     |
+| `tin rename`  | normalize filenames to a chosen case style                    |
+| `tin flatten` | move nested files into a directory root                       |
+| `tin dedup`   | find duplicate files and trash extras                         |
+| `tin trash`   | move files or folders to the system trash                     |
+
+### system
+
+| command    | purpose                                                  |
+| ---------- | -------------------------------------------------------- |
+| `tin open` | open a file, folder, or url with the default handler     |
+| `tin ip`   | show local interface and public ip addresses             |
 
 run `tin <command> --help` for full flags and examples.
 

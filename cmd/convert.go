@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"tin/internal/convert"
@@ -17,44 +15,59 @@ func NewConvertCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "convert <file|glob>...",
-		Short: "Convert an image file to another format",
-		Long:  "Convert one or more supported image files between .jpg, .jpeg, .png, and .webp. Accepts file paths and shell-style glob patterns.",
+		Short: "Convert images, pdfs, videos, or audio between formats",
+		Long:  "Convert one or more files between supported formats. Routes through ImageMagick (images, pdf↔image) or ffmpeg (video, audio, video→audio) based on input and target extensions. Accepts file paths and shell-style glob patterns.",
 		Example: `  tin convert photo.png -t webp
-  tin convert photo.png -o photo.jpg
-  tin convert '*.png' -t webp`,
+  tin convert '*.png' -t webp
+  tin convert doc.pdf -t png
+  tin convert page-*.jpg -t pdf -o album.pdf
+  tin convert clip.mp4 -t mkv
+  tin convert clip.mp4 -t mp3
+  tin convert song.wav -t mp3`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inputs, err := fsx.ExpandPaths(args)
 			if err != nil {
 				return err
 			}
-			if len(inputs) > 1 && output != "" {
-				return fmt.Errorf("--output is only allowed with a single input")
+
+			results, err := convert.Convert(cmd.Context(), convert.Options{
+				Inputs: inputs,
+				Output: output,
+				Target: target,
+			})
+			if err != nil {
+				return err
 			}
 
 			out := cmd.OutOrStdout()
-			for _, input := range inputs {
-				result, err := convert.Convert(cmd.Context(), convert.Options{
-					Input:  input,
-					Output: output,
-					Target: target,
-				})
-				if err != nil {
-					return err
-				}
-
-				ui.PrintBox(out, "converted", []ui.Row{
+			for _, result := range results {
+				rows := []ui.Row{
 					{Label: "before", Value: size.Format(result.BeforeSize)},
 					{Label: "after", Value: size.Format(result.AfterSize)},
-					{Label: "output", Value: result.Output},
-				})
+				}
+				if len(result.Inputs) > 1 {
+					rows = append(rows, ui.Row{Label: "inputs", Value: ui.Plural(len(result.Inputs), "file")})
+				}
+				switch len(result.Outputs) {
+				case 0:
+				case 1:
+					rows = append(rows, ui.Row{Label: "output", Value: result.Outputs[0]})
+				default:
+					rows = append(rows,
+						ui.Row{Label: "pages", Value: ui.Plural(len(result.Outputs), "page")},
+						ui.Row{Label: "first", Value: result.Outputs[0]},
+						ui.Row{Label: "last", Value: result.Outputs[len(result.Outputs)-1]},
+					)
+				}
+				ui.PrintBox(out, "converted", rows)
 			}
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVarP(&target, "target", "t", "", "target extension (jpg, jpeg, png, webp)")
-	cmd.Flags().StringVarP(&output, "output", "o", "", "output path (single input only)")
+	cmd.Flags().StringVarP(&target, "target", "t", "", "target extension (e.g. webp, pdf, mkv, mp3)")
+	cmd.Flags().StringVarP(&output, "output", "o", "", "output path (single input only, or combined image→pdf)")
 
 	return cmd
 }

@@ -30,6 +30,8 @@ func NewRootCommand() *cobra.Command {
 		NewFlattenCommand(),
 		NewIpCommand(),
 		NewMergeCommand(),
+		NewNewCommand(),
+		NewOpenCommand(),
 		NewRenameCommand(),
 		NewResizeCommand(),
 		NewSizeCommand(),

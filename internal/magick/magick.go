@@ -53,6 +53,38 @@ func ConvertImage(ctx context.Context, input string, output string) error {
 	return nil
 }
 
+func PDFToImages(ctx context.Context, input string, outputPattern string) error {
+	if err := Check(); err != nil {
+		return err
+	}
+
+	cmd := exec.CommandContext(ctx, binary,
+		"-density", "150",
+		input,
+		"-scene", "1",
+		"-strip",
+		outputPattern,
+	)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("magick failed: %w: %s", err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
+func ImagesToPDF(ctx context.Context, inputs []string, output string) error {
+	if err := Check(); err != nil {
+		return err
+	}
+
+	args := append([]string{}, inputs...)
+	args = append(args, "-strip", output)
+	cmd := exec.CommandContext(ctx, binary, args...)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("magick failed: %w: %s", err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
 func ResizeImage(ctx context.Context, input string, output string, width int, height int) error {
 	if err := Check(); err != nil {
 		return err

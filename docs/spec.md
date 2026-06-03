@@ -18,6 +18,8 @@ Implemented commands:
 - `flatten`
 - `ip`
 - `merge`
+- `new`
+- `open`
 - `rename`
 - `resize`
 - `size`
@@ -49,7 +51,7 @@ Platform selection happens at runtime with `runtime.GOOS` inside internal platfo
 - **Language**: Go
 - **CLI framework**: Cobra
 - **Go dependencies**: Cobra and Lip Gloss
-- **Runtime tools**: `ghostscript`, `magick`, and `cwebp` when the related command path needs them
+- **Runtime tools**: `ghostscript`, `magick`, `cwebp`, and `ffmpeg` when the related command path needs them
 
 ## Project structure
 
@@ -68,6 +70,8 @@ tin/
 │   ├── flatten.go
 │   ├── ip.go
 │   ├── merge.go
+│   ├── new.go
+│   ├── open.go
 │   ├── rename.go
 │   ├── resize.go
 │   ├── size.go
@@ -82,6 +86,7 @@ tin/
     ├── count/
     ├── cwebp/
     ├── dedup/
+    ├── ffmpeg/
     ├── find/
     ├── flatten/
     ├── ghostscript/
@@ -89,6 +94,7 @@ tin/
     ├── ip/
     ├── magick/
     ├── merge/
+    ├── opener/
     ├── platform/
     ├── rename/
     ├── resize/
@@ -159,6 +165,7 @@ Supported input types:
 - `.pdf` uses `ghostscript`
 - `.jpg`, `.jpeg`, and `.png` use `magick`
 - `.webp` uses `cwebp`
+- `.mp4`, `.mov`, and `.mkv` use `ffmpeg` (H.264/CRF, AAC 128k audio)
 
 Default output is `<name>-compressed.<ext>`.
 
@@ -171,14 +178,14 @@ The command prints:
 
 Unsupported file types and missing tools return clear errors. `-o` is only allowed with a single input; for multiple inputs each result is written to the default location. `--in-place` replaces each input file with its compressed output via an atomic temp-file write and rename in the same directory; it cannot be combined with `-o`.
 
-Run `tin compress intensities` or `tin compress --help` to see supported intensity values. Intensity uses a single uniform vocabulary for both PDFs and images:
+Run `tin compress intensities` or `tin compress --help` to see supported intensity values. Intensity uses a single uniform vocabulary for PDFs, images, and videos:
 
-| Intensity   | PDF preset | Image quality |
-|-------------|------------|---------------|
-| `low`       | `prepress` | 90            |
-| `medium`    | `printer`  | 80            |
-| `high`      | `ebook`    | 65            |
-| `veryhigh`  | `screen`   | 45            |
+| Intensity   | PDF preset | Image quality | Video CRF |
+|-------------|------------|---------------|-----------|
+| `low`       | `prepress` | 90            | 20        |
+| `medium`    | `printer`  | 80            | 23        |
+| `high`      | `ebook`    | 65            | 28        |
+| `veryhigh`  | `screen`   | 45            | 32        |
 
 Default intensity is `medium`.
 
@@ -223,24 +230,30 @@ Behavior:
 
 ### `tin convert <file|glob>... [-t target] [-o output]`
 
-Converts one or more supported image files to another format using ImageMagick. Accepts file paths and shell-style glob patterns. `-o` is only allowed with a single input.
+Converts one or more supported files to another format. The router picks a backend from the (input, target) pair: ImageMagick for image conversions and pdf↔image, ffmpeg for video, audio, and video→audio. Accepts file paths and shell-style glob patterns. Target type is taken from `-t` when provided, otherwise inferred from the `-o` output extension. At least one of `-t` or `-o` must be given.
 
-Supported input and target types:
+Supported formats by family:
 
-- `.jpg`
-- `.jpeg`
-- `.png`
-- `.webp`
+- **image**: `.jpg`, `.jpeg`, `.png`, `.webp`
+- **pdf**: `.pdf`
+- **video**: `.mp4`, `.mov`, `.mkv`, `.webm`, `.avi`
+- **audio**: `.mp3`, `.wav`, `.m4a`, `.flac`, `.ogg`, `.opus`
 
-Target type is taken from `-t` when provided, otherwise inferred from the `-o` output extension. At least one of `-t` or `-o` must be given. Default output is `<name>.<target>`.
+Supported routes:
 
-The command prints:
+| From → To | Backend | Notes |
+|-----------|---------|-------|
+| image → image | ImageMagick | One output per input. |
+| image → pdf (1 input) | ImageMagick | Writes `<name>.pdf` next to the input. |
+| image → pdf (N inputs) | ImageMagick | Combines inputs into a single multi-page PDF. Default output is `<first-input-dir>/combined.pdf`. `-o` is allowed. |
+| pdf → image | ImageMagick | One image per page, written as `<name>-001.<ext>`, `<name>-002.<ext>`, ... next to the input. `-o` is not allowed. |
+| video → video | ffmpeg | Re-encodes using container defaults. |
+| video → audio | ffmpeg | Strips the video stream. |
+| audio → audio | ffmpeg | Re-encodes using container defaults. |
 
-- before size
-- after size
-- output path
+`-o` is only allowed with a single input, except for the multi-image→pdf combine case. Refuses to overwrite existing outputs and refuses no-op conversions where the input is already the target format. Inputs in a single invocation must share a family.
 
-Refuses to overwrite an existing output file. Refuses no-op conversions where the input is already the requested format.
+The command prints one box per operation with before size, after size, and the produced output path or page summary.
 
 ### `tin ip`
 
@@ -253,6 +266,30 @@ Behavior:
 - Reports the public lookup error inline instead of failing the whole command.
 
 The command prints one box per scope: a `local` box with per-interface addresses and a `public` box with the resolved address.
+
+### `tin new <path>...`
+
+Creates one or more files or directories.
+
+Behavior:
+
+- A trailing `/` marks a directory; everything else is treated as a file.
+- Missing parent directories are created automatically with mode `0755`.
+- Files are created empty with mode `0644`.
+- Pre-validates the full target list: if any target already exists or a duplicate is supplied, the command aborts before creating anything.
+
+The command prints created file and directory counts.
+
+### `tin open <target>...`
+
+Opens one or more targets with the platform's default handler.
+
+Behavior:
+
+- macOS uses `open`. Linux uses `xdg-open` (install hint shown if missing).
+- Arguments containing `://` are treated as URLs and passed through without local checks.
+- Other targets must point to an existing local path.
+- Returns silently on success and prints `error: ...` on failure.
 
 ### `tin merge <file|glob>... [-o output.pdf]`
 
@@ -421,7 +458,6 @@ The following broader toolbox ideas are deferred:
 - mount
 - unmount
 - eject
-- open
 - kill
 - usage
 - git subcommands

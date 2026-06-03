@@ -39,11 +39,11 @@ func TestCompressRejectsInPlaceWithOutput(t *testing.T) {
 
 func TestResolveIntensity(t *testing.T) {
 	cases := map[string]intensityMapping{
-		"":         {pdfPreset: "printer", imageQuality: 80},
-		"low":      {pdfPreset: "prepress", imageQuality: 90},
-		"medium":   {pdfPreset: "printer", imageQuality: 80},
-		"high":     {pdfPreset: "ebook", imageQuality: 65},
-		"veryhigh": {pdfPreset: "screen", imageQuality: 45},
+		"":         {pdfPreset: "printer", imageQuality: 80, videoCRF: 23},
+		"low":      {pdfPreset: "prepress", imageQuality: 90, videoCRF: 20},
+		"medium":   {pdfPreset: "printer", imageQuality: 80, videoCRF: 23},
+		"high":     {pdfPreset: "ebook", imageQuality: 65, videoCRF: 28},
+		"veryhigh": {pdfPreset: "screen", imageQuality: 45, videoCRF: 32},
 	}
 
 	for input, want := range cases {

@@ -35,7 +35,7 @@ func TestConvertRequiresInput(t *testing.T) {
 }
 
 func TestConvertRejectsUnsupportedInput(t *testing.T) {
-	_, err := Convert(context.TODO(), Options{Input: "photo.gif", Target: "png"})
+	_, err := Convert(context.TODO(), Options{Inputs: []string{"photo.gif"}, Target: "png"})
 	if err == nil {
 		t.Fatal("Convert() returned nil error for unsupported input")
 	}
@@ -45,7 +45,7 @@ func TestConvertRejectsUnsupportedInput(t *testing.T) {
 }
 
 func TestConvertRequiresTargetOrOutput(t *testing.T) {
-	_, err := Convert(context.TODO(), Options{Input: "photo.png"})
+	_, err := Convert(context.TODO(), Options{Inputs: []string{"photo.png"}})
 	if err == nil {
 		t.Fatal("Convert() returned nil error when target/output unspecified")
 	}
@@ -55,7 +55,7 @@ func TestConvertRequiresTargetOrOutput(t *testing.T) {
 }
 
 func TestConvertRejectsUnsupportedTarget(t *testing.T) {
-	_, err := Convert(context.TODO(), Options{Input: "photo.png", Target: "gif"})
+	_, err := Convert(context.TODO(), Options{Inputs: []string{"photo.png"}, Target: "gif"})
 	if err == nil {
 		t.Fatal("Convert() returned nil error for unsupported target")
 	}
@@ -65,7 +65,7 @@ func TestConvertRejectsUnsupportedTarget(t *testing.T) {
 }
 
 func TestConvertRejectsMismatchedTargetAndOutput(t *testing.T) {
-	_, err := Convert(context.TODO(), Options{Input: "photo.jpg", Target: "webp", Output: "photo.png"})
+	_, err := Convert(context.TODO(), Options{Inputs: []string{"photo.jpg"}, Target: "webp", Output: "photo.png"})
 	if err == nil {
 		t.Fatal("Convert() returned nil error for mismatched target/output")
 	}
@@ -75,12 +75,42 @@ func TestConvertRejectsMismatchedTargetAndOutput(t *testing.T) {
 }
 
 func TestConvertRejectsSameFormat(t *testing.T) {
-	_, err := Convert(context.TODO(), Options{Input: "photo.jpg", Target: "jpeg"})
+	_, err := Convert(context.TODO(), Options{Inputs: []string{"photo.jpg"}, Target: "jpeg"})
 	if err == nil {
 		t.Fatal("Convert() returned nil error for same input/target")
 	}
 	if !strings.Contains(err.Error(), "already") {
 		t.Fatalf("Convert() error = %v, want already-this-format", err)
+	}
+}
+
+func TestConvertRejectsCrossFamily(t *testing.T) {
+	_, err := Convert(context.TODO(), Options{Inputs: []string{"clip.mp4"}, Target: "png"})
+	if err == nil {
+		t.Fatal("Convert() returned nil error for unsupported cross-family conversion")
+	}
+	if !strings.Contains(err.Error(), "unsupported conversion") {
+		t.Fatalf("Convert() error = %v, want cross-family rejection", err)
+	}
+}
+
+func TestConvertRejectsMixedFamilies(t *testing.T) {
+	_, err := Convert(context.TODO(), Options{Inputs: []string{"a.png", "b.mp4"}, Target: "webp"})
+	if err == nil {
+		t.Fatal("Convert() returned nil error for mixed input families")
+	}
+	if !strings.Contains(err.Error(), "same family") {
+		t.Fatalf("Convert() error = %v, want mixed-family rejection", err)
+	}
+}
+
+func TestConvertRefusesPDFOutputFlag(t *testing.T) {
+	_, err := Convert(context.TODO(), Options{Inputs: []string{"doc.pdf"}, Target: "png", Output: "out.png"})
+	if err == nil {
+		t.Fatal("Convert() returned nil error when -o passed for pdf->image")
+	}
+	if !strings.Contains(err.Error(), "not supported when converting pdf to images") {
+		t.Fatalf("Convert() error = %v, want pdf->image -o rejection", err)
 	}
 }
 
@@ -95,7 +125,7 @@ func TestConvertRefusesToOverwriteExistingOutput(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := Convert(context.TODO(), Options{Input: input, Output: output})
+	_, err := Convert(context.TODO(), Options{Inputs: []string{input}, Output: output})
 	if err == nil {
 		t.Fatal("Convert() returned nil error when output exists")
 	}
