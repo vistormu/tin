@@ -31,11 +31,15 @@ func NewZipCommand() *cobra.Command {
 				return err
 			}
 
-			ui.PrintBox(cmd.OutOrStdout(), "zipped", []ui.Row{
+			rows := []ui.Row{
 				{Label: "files", Value: ui.Plural(result.Files, "file")},
 				{Label: "bytes", Value: size.Format(result.Bytes)},
-				{Label: "output", Value: result.Output},
-			})
+			}
+			if result.Skipped > 0 {
+				rows = append(rows, ui.Row{Label: "skipped", Value: ui.Plural(result.Skipped, "symlink/special file")})
+			}
+			rows = append(rows, ui.Row{Label: "output", Value: result.Output})
+			ui.PrintBox(cmd.OutOrStdout(), "zipped", rows)
 			return nil
 		},
 	}

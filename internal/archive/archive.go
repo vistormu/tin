@@ -18,9 +18,10 @@ type ZipOptions struct {
 }
 
 type ZipResult struct {
-	Output string
-	Files  int
-	Bytes  int64
+	Output  string
+	Files   int
+	Bytes   int64
+	Skipped int
 }
 
 type UnzipOptions struct {
@@ -120,8 +121,13 @@ func DefaultZipOutput(inputs []string) string {
 }
 
 func DefaultUnzipOutput(input string) string {
-	clean := filepath.Clean(input)
-	base := fileutil.Base(clean)
+	return filepath.Join(fileutil.Parent(filepath.Clean(input)), UnzipDirName(input))
+}
+
+// UnzipDirName is the directory name an archive extracts into: its base name
+// without the .zip extension.
+func UnzipDirName(input string) string {
+	base := fileutil.Base(filepath.Clean(input))
 	ext := fileutil.Ext(base)
 	if strings.EqualFold(ext, ".zip") {
 		base = strings.TrimSuffix(base, ext)
@@ -129,7 +135,7 @@ func DefaultUnzipOutput(input string) string {
 	if base == "" || base == "." {
 		return "archive"
 	}
-	return filepath.Join(fileutil.Parent(clean), base)
+	return base
 }
 
 func addToZip(zw *zip.Writer, input string, seen map[string]struct{}, result *ZipResult) error {
@@ -171,7 +177,8 @@ func addZipEntry(zw *zip.Writer, path string, archiveName string, seen map[strin
 		return err
 	}
 	if info.Mode()&os.ModeSymlink != 0 {
-		return fmt.Errorf("cannot zip symlink %q", path)
+		result.Skipped++
+		return nil
 	}
 
 	header, err := zip.FileInfoHeader(info)
@@ -185,7 +192,8 @@ func addZipEntry(zw *zip.Writer, path string, archiveName string, seen map[strin
 		return err
 	}
 	if !info.Mode().IsRegular() {
-		return fmt.Errorf("cannot zip unsupported file type %q", path)
+		result.Skipped++
+		return nil
 	}
 	header.Method = zip.Deflate
 
@@ -209,20 +217,25 @@ func addZipEntry(zw *zip.Writer, path string, archiveName string, seen map[strin
 }
 
 func extractZipFile(file *zip.File, outputDir string) (int64, error) {
-	target, err := safeExtractPath(outputDir, file.Name)
+	name := decodeEntryName(file.Name)
+	target, err := safeExtractPath(outputDir, name)
 	if err != nil {
 		return 0, err
 	}
 
 	info := file.FileInfo()
 	if info.IsDir() {
-		return 0, os.MkdirAll(target, info.Mode().Perm())
+		// Directories are created writable rather than with their stored mode.
+		// Zips written on Windows record the DOS read-only attribute as mode
+		// 0555, and honouring that makes every entry inside the directory fail
+		// to extract with "permission denied".
+		return 0, os.MkdirAll(target, 0700)
 	}
 	if info.Mode()&os.ModeSymlink != 0 {
-		return 0, fmt.Errorf("cannot unzip symlink %q", file.Name)
+		return 0, fmt.Errorf("cannot unzip symlink %q", name)
 	}
 	if !info.Mode().IsRegular() {
-		return 0, fmt.Errorf("cannot unzip unsupported file type %q", file.Name)
+		return 0, fmt.Errorf("cannot unzip unsupported file type %q", name)
 	}
 
 	if err := os.MkdirAll(filepath.Dir(target), 0700); err != nil {

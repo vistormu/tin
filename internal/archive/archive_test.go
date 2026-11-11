@@ -2,6 +2,7 @@ package archive
 
 import (
 	"archive/zip"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -78,6 +79,35 @@ func TestZipAndUnzipRoundTrip(t *testing.T) {
 	}
 }
 
+func TestZipSkipsSymlinks(t *testing.T) {
+	dir := t.TempDir()
+	inputDir := filepath.Join(dir, "input")
+	if err := os.Mkdir(inputDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(inputDir, "real.txt"), []byte("hello"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(inputDir, "real.txt"), filepath.Join(inputDir, "link.txt")); err != nil {
+		t.Skipf("symlinks unsupported: %v", err)
+	}
+	if err := os.Symlink(filepath.Join(dir, "missing"), filepath.Join(inputDir, "broken.txt")); err != nil {
+		t.Skipf("symlinks unsupported: %v", err)
+	}
+
+	archivePath := filepath.Join(dir, "out.zip")
+	result, err := Zip(ZipOptions{Inputs: []string{inputDir}, Output: archivePath})
+	if err != nil {
+		t.Fatalf("Zip() returned error, want symlinks skipped: %v", err)
+	}
+	if result.Files != 1 || result.Bytes != 5 {
+		t.Fatalf("Zip result = %#v, want 1 file and 5 bytes", result)
+	}
+	if result.Skipped != 2 {
+		t.Fatalf("Zip skipped = %d, want 2", result.Skipped)
+	}
+}
+
 func TestZipDoesNotOverwriteOutput(t *testing.T) {
 	dir := t.TempDir()
 	input := filepath.Join(dir, "a.txt")
@@ -143,5 +173,88 @@ func TestUnzipDoesNotOverwriteFiles(t *testing.T) {
 
 	if _, err := Unzip(UnzipOptions{Input: archivePath, OutputDir: outDir}); err == nil {
 		t.Fatal("Unzip() returned nil error for existing destination file")
+	}
+}
+
+func TestUnzipDecodesNonUTF8EntryNames(t *testing.T) {
+	dir := t.TempDir()
+	archivePath := filepath.Join(dir, "legacy.zip")
+
+	file, err := os.Create(archivePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zw := zip.NewWriter(file)
+	// 0x9e is CP437 '₧'; raw, it is invalid UTF-8 and macOS rejects it.
+	entry, err := zw.CreateHeader(&zip.FileHeader{Name: "Large (2\x9e)/icon.png", Method: zip.Deflate})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := entry.Write([]byte("png")); err != nil {
+		t.Fatal(err)
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	outDir := filepath.Join(dir, "out")
+	if _, err := Unzip(UnzipOptions{Input: archivePath, OutputDir: outDir}); err != nil {
+		t.Fatal(err)
+	}
+
+	want := filepath.Join(outDir, "Large (2₧)", "icon.png")
+	if got, err := os.ReadFile(want); err != nil || string(got) != "png" {
+		t.Fatalf("%s = %q, %v; want png", want, got, err)
+	}
+}
+
+func TestDecodeEntryNameLeavesValidUTF8Alone(t *testing.T) {
+	for _, name := range []string{"plain/file.txt", "café/naïve.txt", "日本語/x.png"} {
+		if got := decodeEntryName(name); got != name {
+			t.Fatalf("decodeEntryName(%q) = %q, want unchanged", name, got)
+		}
+	}
+}
+
+func TestUnzipExtractsIntoReadOnlyDirectoryEntries(t *testing.T) {
+	dir := t.TempDir()
+	archivePath := filepath.Join(dir, "dos.zip")
+
+	file, err := os.Create(archivePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zw := zip.NewWriter(file)
+	// Zips written on Windows store the DOS read-only attribute as mode 0555.
+	dirHeader := &zip.FileHeader{Name: "Textures/"}
+	dirHeader.SetMode(fs.ModeDir | 0555)
+	if _, err := zw.CreateHeader(dirHeader); err != nil {
+		t.Fatal(err)
+	}
+	entry, err := zw.CreateHeader(&zip.FileHeader{Name: "Textures/button.png", Method: zip.Deflate})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := entry.Write([]byte("png")); err != nil {
+		t.Fatal(err)
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	outDir := filepath.Join(dir, "out")
+	if _, err := Unzip(UnzipOptions{Input: archivePath, OutputDir: outDir}); err != nil {
+		t.Fatal(err)
+	}
+
+	want := filepath.Join(outDir, "Textures", "button.png")
+	if got, err := os.ReadFile(want); err != nil || string(got) != "png" {
+		t.Fatalf("%s = %q, %v; want png", want, got, err)
 	}
 }

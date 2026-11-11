@@ -33,7 +33,7 @@ this builds and installs `tin` into `~/.local/bin/tin`.
 | command        | purpose                                   |
 | -------------- | ----------------------------------------- |
 | `tin compress` | compress pdfs, images, and videos         |
-| `tin convert`  | convert between image, pdf, video, and audio formats |
+| `tin convert`  | convert between image, pdf, svg, video, and audio formats |
 | `tin resize`   | resize images                             |
 | `tin merge`    | merge multiple pdfs into one              |
 | `tin split`    | split a pdf into one file per page        |
@@ -43,7 +43,7 @@ this builds and installs `tin` into `~/.local/bin/tin`.
 | command     | purpose                |
 | ----------- | ---------------------- |
 | `tin zip`   | create a zip archive   |
-| `tin unzip` | extract a zip archive  |
+| `tin unzip` | extract zip archives   |
 
 ### inspect
 
@@ -59,9 +59,17 @@ this builds and installs `tin` into `~/.local/bin/tin`.
 | ------------- | ------------------------------------------------------------- |
 | `tin new`     | create files or directories with parent dirs auto-created     |
 | `tin rename`  | normalize filenames to a chosen case style                    |
+| `tin replace` | replace a string in files recursively                        |
 | `tin flatten` | move nested files into a directory root                       |
 | `tin dedup`   | find duplicate files and trash extras                         |
 | `tin trash`   | move files or folders to the system trash                     |
+
+### git
+
+| command              | purpose                                                |
+| -------------------- | ------------------------------------------------------ |
+| `tin git undo`       | undo the latest commit, preserving changes by default |
+| `tin git obliterate` | remove a path from the entire git history              |
 
 ### system
 
@@ -76,11 +84,22 @@ run `tin <command> --help` for full flags and examples.
 
 ```sh
 tin compress report.pdf -i high
+tin convert photo.heic -t jpg
+tin convert diagram.pdf -t svg
+tin convert scan.tiff -t png
 tin resize "*.jpg" -w 1600
 tin merge chapter-*.pdf -o book.pdf
 tin rename "*.jpg" --style kebab --dry-run
+tin replace example.com/old example.com/new . -e go
 tin dedup ./downloads
+tin git undo
+tin git obliterate .env --dry-run
 tin ip
 ```
 
 commands that move or remove files show the plan first, confirm by default, and support `--dry-run` and `--yes`.
+
+`tin git obliterate` requires
+[`git-filter-repo`](https://github.com/newren/git-filter-repo). history rewrites
+change commit hashes and may remove the `origin` remote; coordinate before
+force-pushing rewritten history.

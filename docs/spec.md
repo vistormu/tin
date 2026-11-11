@@ -16,11 +16,14 @@ Implemented commands:
 - `dedup`
 - `find`
 - `flatten`
+- `git undo`
+- `git obliterate`
 - `ip`
 - `merge`
 - `new`
 - `open`
 - `rename`
+- `replace`
 - `resize`
 - `size`
 - `split`
@@ -51,7 +54,7 @@ Platform selection happens at runtime with `runtime.GOOS` inside internal platfo
 - **Language**: Go
 - **CLI framework**: Cobra
 - **Go dependencies**: Cobra and Lip Gloss
-- **Runtime tools**: `ghostscript`, `magick`, `cwebp`, and `ffmpeg` when the related command path needs them
+- **Runtime tools**: `ghostscript`, `magick`, `cwebp`, `ffmpeg`, `pdftocairo`/`pdfinfo` (poppler), `git`, and `git-filter-repo` when the related command path needs them
 
 ## Project structure
 
@@ -68,11 +71,13 @@ tin/
 │   ├── dedup.go
 │   ├── find.go
 │   ├── flatten.go
+│   ├── git.go
 │   ├── ip.go
 │   ├── merge.go
 │   ├── new.go
 │   ├── open.go
 │   ├── rename.go
+│   ├── replace.go
 │   ├── resize.go
 │   ├── size.go
 │   ├── split.go
@@ -89,6 +94,7 @@ tin/
     ├── ffmpeg/
     ├── find/
     ├── flatten/
+    ├── git/
     ├── ghostscript/
     ├── installhint/
     ├── ip/
@@ -96,7 +102,9 @@ tin/
     ├── merge/
     ├── opener/
     ├── platform/
+    ├── poppler/
     ├── rename/
+    ├── replace/
     ├── resize/
     ├── shared/
     │   ├── cobrahelp/
@@ -114,7 +122,7 @@ tin/
 
 Commands that can remove or move user data must show the exact target list before acting. Destructive or hard-to-undo actions confirm by default and support a dry-run mode when useful.
 
-`tin trash`, `tin flatten`, `tin rename`, and `tin dedup` confirm by default. `--dry-run` prints planned changes only. `--yes` skips confirmation.
+`tin trash`, `tin flatten`, `tin rename`, `tin replace`, `tin dedup`, `tin git undo --hard`, and `tin git obliterate` confirm destructive changes by default. `--dry-run` prints planned changes only where supported. `--yes` skips confirmation.
 
 ## Terminal output
 
@@ -230,11 +238,12 @@ Behavior:
 
 ### `tin convert <file|glob>... [-t target] [-o output]`
 
-Converts one or more supported files to another format. The router picks a backend from the (input, target) pair: ImageMagick for image conversions and pdf↔image, ffmpeg for video, audio, and video→audio. Accepts file paths and shell-style glob patterns. Target type is taken from `-t` when provided, otherwise inferred from the `-o` output extension. At least one of `-t` or `-o` must be given.
+Converts one or more supported files to another format. The router picks a backend from the (input, target) pair: ImageMagick for image conversions and pdf↔image, poppler (`pdftocairo`, `pdfinfo`) for pdf→svg, ffmpeg for video, audio, and video→audio. Accepts file paths and shell-style glob patterns. Target type is taken from `-t` when provided, otherwise inferred from the `-o` output extension. At least one of `-t` or `-o` must be given.
 
 Supported formats by family:
 
-- **image**: `.jpg`, `.jpeg`, `.png`, `.webp`
+- **image**: `.jpg`, `.jpeg`, `.png`, `.webp`, `.heic`, `.tiff`, `.tif`
+- **vector**: `.svg`
 - **pdf**: `.pdf`
 - **video**: `.mp4`, `.mov`, `.mkv`, `.webm`, `.avi`
 - **audio**: `.mp3`, `.wav`, `.m4a`, `.flac`, `.ogg`, `.opus`
@@ -247,11 +256,12 @@ Supported routes:
 | image → pdf (1 input) | ImageMagick | Writes `<name>.pdf` next to the input. |
 | image → pdf (N inputs) | ImageMagick | Combines inputs into a single multi-page PDF. Default output is `<first-input-dir>/combined.pdf`. `-o` is allowed. |
 | pdf → image | ImageMagick | One image per page, written as `<name>-001.<ext>`, `<name>-002.<ext>`, ... next to the input. `-o` is not allowed. |
+| pdf → svg | poppler | Vector output, one SVG per page. Single-page PDFs write `<name>.svg` and accept `-o`; multi-page PDFs write `<name>-001.svg`, `<name>-002.svg`, ... next to the input and reject `-o`. |
 | video → video | ffmpeg | Re-encodes using container defaults. |
 | video → audio | ffmpeg | Strips the video stream. |
 | audio → audio | ffmpeg | Re-encodes using container defaults. |
 
-`-o` is only allowed with a single input, except for the multi-image→pdf combine case. Refuses to overwrite existing outputs and refuses no-op conversions where the input is already the target format. Inputs in a single invocation must share a family.
+`-o` is only allowed with a single input, except for the multi-image→pdf combine case. Refuses to overwrite existing outputs and refuses no-op conversions where the input is already the target format; `.jpeg`/`.jpg` and `.tif`/`.tiff` are treated as the same format for that check. Inputs in a single invocation must share a family.
 
 The command prints one box per operation with before size, after size, and the produced output path or page summary.
 
@@ -350,6 +360,22 @@ Behavior:
 
 The command prints planned rename count, skipped count, and final moved count.
 
+### `tin replace <old> <new> [dir] [-e ext] [-n glob] [--dry-run] [--yes]`
+
+Recursively replaces every occurrence of a literal string `<old>` with `<new>` across files under `dir` (current directory by default). This is the safe equivalent of `find . -exec sed -i ...` without the BSD/GNU sed differences and escaping pitfalls.
+
+Behavior:
+
+- Matching is literal, not regex; no escaping is needed for the search or replacement text.
+- Walks the directory recursively. `-e` / `--ext` limits to comma-separated extensions (e.g. `go,md`); `-n` / `--name` limits to files whose basename matches a glob.
+- Binary files (detected by a NUL byte in the first 8 KB) are skipped so they are never corrupted.
+- The `.git` directory is always skipped.
+- File permissions are preserved; each file is rewritten via an atomic temp-file write and rename in the same directory.
+- Confirms by default, showing the per-file occurrence counts first.
+- `--dry-run` prints the plan only. `--yes` skips confirmation.
+
+The command prints the affected file count and total occurrence count, both in the plan and after applying.
+
 ### `tin resize <file|glob>... -w width [-H height] [-o output] [--in-place]`
 
 Resizes one or more supported image files using ImageMagick. Accepts file paths and shell-style glob patterns. `-o` is only allowed with a single input. `--in-place` replaces each input file with its resized output via an atomic temp-file write and rename in the same directory; it cannot be combined with `-o`.
@@ -392,6 +418,40 @@ Behavior:
 
 The command prints planned move count, planned directory removal count, and final moved/removed counts.
 
+### `tin git undo [--hard] [--yes]`
+
+Undoes the latest commit by resetting the current branch to its first parent.
+
+Behavior:
+
+- Defaults to `git reset --soft HEAD^`, leaving the undone commit's changes staged.
+- `--hard` uses `git reset --hard HEAD^`, discarding the undone commit plus all staged and unstaged tracked changes.
+- Untracked files are never removed, including with `--hard`.
+- Shows the commit hash, subject, repository root, and reset mode before acting.
+- `--hard` confirms by default. `--yes` skips that confirmation.
+- Refuses to undo a root commit because it has no parent.
+
+The command prints the commit and reset mode before and after applying the reset.
+
+### `tin git obliterate <path> [--dry-run] [--force] [--yes]`
+
+Permanently removes an exact file or directory path from all local Git history using `git-filter-repo`.
+
+Behavior:
+
+- Requires both `git` and `git-filter-repo`.
+- Requires a clean working tree, including no untracked files.
+- Accepts paths relative to the current directory or absolute paths, then normalizes them to a repository-root-relative path.
+- Refuses paths outside the repository, the repository root itself, and `.git` metadata.
+- Verifies that the path appears in history before running the rewrite.
+- Runs `git filter-repo --path <path> --invert-paths`.
+- Preserves `git-filter-repo`'s fresh-clone safety check by default. `--force` explicitly forwards `--force` to override it.
+- Confirms by default. `--dry-run` prints the plan only and `--yes` skips confirmation.
+- Path filtering does not follow renames. Every historical path used by a renamed file must be obliterated separately.
+- Rewrites commit hashes across local branches and tags. `git-filter-repo` may remove the `origin` remote to prevent accidental pushes of rewritten history.
+
+Publishing the rewrite requires coordinating with other repository users and force-pushing the rewritten refs. Removing a committed secret from history does not revoke it; exposed credentials must also be rotated.
+
 ### `tin size <path|glob>...`
 
 Shows a human-readable size for one or more files or directories. Accepts paths and shell-style glob patterns.
@@ -431,23 +491,28 @@ Behavior:
 - Recursively archives directory contents.
 - Default output is `<single-input-name>.zip` for one input or `archive.zip` for multiple inputs.
 - Refuses to overwrite an existing output archive.
-- Refuses unsupported file types such as symlinks.
+- Skips symlinks and non-regular files (devices, sockets, FIFOs) instead of failing; they are left out of the archive and counted as skipped.
 
-The command prints file count, uncompressed byte count, and output path.
+The command prints file count, uncompressed byte count, skipped count (when any), and output path.
 
-### `tin unzip <archive.zip> [-o dir]`
+### `tin unzip <archive.zip|glob>... [-o dir]`
 
-Extracts a `.zip` archive using Go's standard library.
+Extracts one or more `.zip` archives using Go's standard library. Accepts paths and shell-style glob patterns.
 
 Behavior:
 
-- Default output directory is the archive name without `.zip`.
+- Each archive is extracted into its own directory named after the archive without `.zip`, next to the archive.
+- `-o` sets the parent directory those per-archive directories are created in, so `tin unzip '*.zip' -o out` produces `out/<archive>/` for each match.
+- Prints one result box per archive.
+- A failing archive in a batch is reported as a warning on stderr and the remaining archives are still extracted; the command exits non-zero with a summary of how many succeeded. A single archive reports its own error verbatim.
+- Directories are created writable rather than with their stored mode; zips written on Windows record the DOS read-only attribute as mode `0555`, which would make every entry inside them fail with `permission denied`. File modes are preserved.
+- Entry names that are not valid UTF-8 are decoded as CP437, the encoding the zip spec assigns to names stored without the UTF-8 flag. Writing such bytes to the filesystem raw fails on macOS with `illegal byte sequence`.
 - Refuses non-zip archive extensions.
 - Refuses unsafe archive paths such as `../file`.
 - Refuses to overwrite existing destination files.
 - Refuses unsupported entries such as symlinks.
 
-The command prints file count, extracted byte count, and output directory.
+The command prints file count, extracted byte count, and output directory for each archive.
 
 ## Deferred commands
 
@@ -460,7 +525,6 @@ The following broader toolbox ideas are deferred:
 - eject
 - kill
 - usage
-- git subcommands
 
 ## Installation
 

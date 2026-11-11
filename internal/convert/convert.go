@@ -8,6 +8,7 @@ import (
 
 	"tin/internal/ffmpeg"
 	"tin/internal/magick"
+	"tin/internal/poppler"
 	"tin/internal/shared/fileutil"
 	"tin/internal/shared/fsx"
 )
@@ -17,6 +18,7 @@ type Family int
 const (
 	FamilyUnknown Family = iota
 	FamilyImage
+	FamilyVector
 	FamilyPDF
 	FamilyVideo
 	FamilyAudio
@@ -27,6 +29,10 @@ var familyByExt = map[string]Family{
 	".jpeg": FamilyImage,
 	".png":  FamilyImage,
 	".webp": FamilyImage,
+	".heic": FamilyImage,
+	".tiff": FamilyImage,
+	".tif":  FamilyImage,
+	".svg":  FamilyVector,
 	".pdf":  FamilyPDF,
 	".mp4":  FamilyVideo,
 	".mov":  FamilyVideo,
@@ -96,6 +102,8 @@ func Convert(ctx context.Context, opts Options) ([]Result, error) {
 		return convertImageToPDF(ctx, opts)
 	case fromFam == FamilyPDF && toFam == FamilyImage:
 		return convertPDFToImage(ctx, opts, toExt)
+	case fromFam == FamilyPDF && toFam == FamilyVector:
+		return convertPDFToSVG(ctx, opts)
 	case fromFam == FamilyVideo && toFam == FamilyVideo:
 		return convertWithFFmpeg(ctx, opts, toExt, false)
 	case fromFam == FamilyVideo && toFam == FamilyAudio:
@@ -267,6 +275,73 @@ func convertPDFToImage(ctx context.Context, opts Options, toExt string) ([]Resul
 	return results, nil
 }
 
+func convertPDFToSVG(ctx context.Context, opts Options) ([]Result, error) {
+	if len(opts.Inputs) > 1 && opts.Output != "" {
+		return nil, fmt.Errorf("--output is only allowed with a single input")
+	}
+
+	results := make([]Result, 0, len(opts.Inputs))
+	for _, input := range opts.Inputs {
+		pages, err := poppler.PageCount(ctx, input)
+		if err != nil {
+			return nil, err
+		}
+		if pages == 0 {
+			return nil, fmt.Errorf("%q has no pages", input)
+		}
+
+		before, err := fileutil.FileSize(input)
+		if err != nil {
+			return nil, err
+		}
+
+		var outputs []string
+		if pages == 1 {
+			output := opts.Output
+			if output == "" {
+				output = fileutil.ReplaceExt(input, ".svg")
+			}
+			if err := refuseOverwrite(output); err != nil {
+				return nil, err
+			}
+			outputs = []string{output}
+		} else {
+			if opts.Output != "" {
+				return nil, fmt.Errorf("--output is not supported for %q; it has %d pages, which are written next to the input", input, pages)
+			}
+			parent := fileutil.Parent(input)
+			stem := fileutil.Stem(input)
+			for page := 1; page <= pages; page++ {
+				output := filepath.Join(parent, fmt.Sprintf("%s-%03d.svg", stem, page))
+				if err := refuseOverwrite(output); err != nil {
+					return nil, err
+				}
+				outputs = append(outputs, output)
+			}
+		}
+
+		var after int64
+		for i, output := range outputs {
+			if err := poppler.PDFToSVG(ctx, input, i+1, output); err != nil {
+				return nil, err
+			}
+			size, err := fileutil.FileSize(output)
+			if err != nil {
+				return nil, err
+			}
+			after += size
+		}
+
+		results = append(results, Result{
+			Inputs:     []string{input},
+			Outputs:    outputs,
+			BeforeSize: before,
+			AfterSize:  after,
+		})
+	}
+	return results, nil
+}
+
 func convertWithFFmpeg(ctx context.Context, opts Options, toExt string, stripVideo bool) ([]Result, error) {
 	if len(opts.Inputs) > 1 && opts.Output != "" {
 		return nil, fmt.Errorf("--output is only allowed with a single input")
@@ -336,10 +411,14 @@ func resolveTargetExt(opts Options) (string, error) {
 }
 
 func normalizeExt(ext string) string {
-	if ext == ".jpeg" {
+	switch ext {
+	case ".jpeg":
 		return ".jpg"
+	case ".tif":
+		return ".tiff"
+	default:
+		return ext
 	}
-	return ext
 }
 
 func refuseOverwrite(path string) error {
@@ -385,6 +464,8 @@ func familyName(f Family) string {
 	switch f {
 	case FamilyImage:
 		return "image"
+	case FamilyVector:
+		return "vector"
 	case FamilyPDF:
 		return "pdf"
 	case FamilyVideo:

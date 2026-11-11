@@ -29,6 +29,9 @@ func NewCompressCommand() *cobra.Command {
   tin compress photo.jpg --in-place
   tin compress intensities`,
 		Args: cobra.MinimumNArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			return nil, cobra.ShellCompDirectiveDefault
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inputs, err := fsx.ExpandPaths(args)
 			if err != nil {

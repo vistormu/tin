@@ -16,10 +16,13 @@ func NewConvertCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "convert <file|glob>...",
 		Short: "Convert images, pdfs, videos, or audio between formats",
-		Long:  "Convert one or more files between supported formats. Routes through ImageMagick (images, pdf↔image) or ffmpeg (video, audio, video→audio) based on input and target extensions. Accepts file paths and shell-style glob patterns.",
-		Example: `  tin convert photo.png -t webp
+		Long:  "Convert one or more files between supported formats. Routes through ImageMagick (images, pdf↔image), poppler (pdf→svg), or ffmpeg (video, audio, video→audio) based on input and target extensions. Accepts file paths and shell-style glob patterns.",
+		Example: `  tin convert photo.heic -t jpg
+  tin convert photo.png -t webp
   tin convert '*.png' -t webp
+  tin convert scan.tiff -t png
   tin convert doc.pdf -t png
+  tin convert diagram.pdf -t svg
   tin convert page-*.jpg -t pdf -o album.pdf
   tin convert clip.mp4 -t mkv
   tin convert clip.mp4 -t mp3
@@ -66,7 +69,7 @@ func NewConvertCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&target, "target", "t", "", "target extension (e.g. webp, pdf, mkv, mp3)")
+	cmd.Flags().StringVarP(&target, "target", "t", "", "target extension (e.g. jpg, heic, tiff, pdf, svg, mkv, mp3)")
 	cmd.Flags().StringVarP(&output, "output", "o", "", "output path (single input only, or combined image→pdf)")
 
 	return cmd
