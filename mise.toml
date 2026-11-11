@@ -1,0 +1,4 @@
+# Release tooling for this repo only (not global). Keep in step with the version the
+# release workflow uses (.github/workflows/release.yml).
+[tools]
+goreleaser = "2.20.1"

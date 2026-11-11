@@ -20,11 +20,24 @@ the goal is to keep common terminal tasks fast and predictable, with sensible de
 
 ## install
 
+with homebrew (macos and linux):
+
 ```sh
-just install
+brew install --cask vistormu/tap/tin
 ```
 
-this builds and installs `tin` into `~/.local/bin/tin`.
+from source: `just install` builds it into `~/.local/bin/tin`.
+
+## release
+
+push a version tag and the release workflow does the rest (github release +
+homebrew cask, via goreleaser):
+
+```sh
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+`just snapshot` is the local dry run.
 
 ## commands
 

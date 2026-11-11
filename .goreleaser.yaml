@@ -1,0 +1,42 @@
+# Releases: push a tag (`git tag v0.2.0 && git push origin v0.2.0`) and the release
+# workflow runs GoReleaser: builds, GitHub release with archives + checksums, and the
+# cask in vistormu/homebrew-tap. Local dry run, no publishing: `just snapshot`.
+version: 2
+
+project_name: tin
+
+builds:
+  - env: [CGO_ENABLED=0]
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags: ["-s -w -X tin/cmd.Version={{ .Version }}"]
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github
+  sort: asc
+
+homebrew_casks:
+  - repository:
+      owner: vistormu
+      name: homebrew-tap
+      # fine-grained token, contents:write on homebrew-tap only (repo secret)
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Casks
+    homepage: https://github.com/vistormu/tin
+    description: A bundle of terminal tools
+    commit_msg_template: "tin {{ .Tag }}"
+    hooks:
+      post:
+        # the binary isn't signed by Apple: clear the quarantine flag so it runs
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/tin"]
+          end
