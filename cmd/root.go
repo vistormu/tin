@@ -10,10 +10,14 @@ import (
 	"tin/internal/shared/ui"
 )
 
+// Version is set at release time by GoReleaser (-ldflags -X tin/cmd.Version=...).
+var Version = "dev"
+
 func NewRootCommand() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "tin",
 		Short:         "Tiny personal CLI tools",
+		Version:       Version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
