@@ -27,3 +27,6 @@ Thumbs.db
 *.tar
 *.tar.gz
 *.tgz
+
+# Local agent settings
+.claude/
